@@ -1,3 +1,4 @@
+from datetime import timedelta
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
@@ -19,7 +20,16 @@ app.secret_key = os.getenv("SECRET_KEY", "default_secret_key")  # Default fallba
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("SQLALCHEMY_DATABASE_URI", 'sqlite:///angelic.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "default_jwt_secret_key")  # Fallback
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=2)
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"]  # Store JWT in cookies
+app.config["JWT_COOKIE_SECURE"] = False  # Set to True if using HTTPS
+app.config["JWT_COOKIE_CSRF_PROTECT"] = False  # Disable CSRF protection for now (optional)
+
+
+# Enable CORS properly
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True, allow_headers=["Content-Type", "Authorization"])
+
+
 # Configurations
 # UPLOAD_FOLDER = './uploads'  # Set this to your desired folder for uploaded images
 # ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}

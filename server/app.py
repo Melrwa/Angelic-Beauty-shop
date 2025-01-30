@@ -3,10 +3,11 @@
 from datetime import timedelta
 
 from flask import request, session, jsonify, make_response
-from flask_restful import Resource
+from flask_restful import Resource, reqparse
 from flask_jwt_extended import create_access_token, jwt_required, set_access_cookies, unset_jwt_cookies, get_jwt_identity
 from config import app, db, api, avatar
-from models import User
+from models import User, Staff, Service, StaffService, Review, Transaction
+
 from utils import role_required
 from sqlalchemy.exc import IntegrityError
 # import traceback
@@ -78,16 +79,22 @@ class Signup(Resource):
             return {"message": f"An error occurred: {str(e)}"}, 500
         
 
-class CheckSession(Resource):
-    @jwt_required()
-    def get(self):
-        # Get the user ID or other details from the JWT
-        user_id = get_jwt_identity()
-        return {
-            "message": "Session active",
-            "user_id": user_id,
-        }, 200
 
+class CheckSession(Resource):
+    @jwt_required(locations=["cookies"])  # Ensure JWT is read from cookies
+    def get(self):
+        current_user_id = get_jwt_identity()  # Extract user ID from JWT
+        user = User.query.get(current_user_id)
+
+        if user:
+            return {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role  # Return role if needed
+            }, 200
+
+        return {"message": "User not found"}, 404
 
 
 class Login(Resource):
@@ -111,6 +118,43 @@ class Login(Resource):
         return {"message": "Invalid credentials"}, 401
     
     
+class ServiceResource(Resource):
+    def get(self):
+        services = Service.query.all()
+        return [service.to_dict() for service in services], 200
+
+    def post(self):
+        data = request.get_json()
+
+        if not data or "name" not in data or "picture" not in data or "price" not in data or "time_taken" not in data:
+            return {"message": "Missing required fields"}, 400
+
+        try:
+            new_service = Service(
+                name=data["name"],
+                picture=data["picture"],
+                price=float(data["price"]),
+                time_taken=float(data["time_taken"]),
+            )
+            db.session.add(new_service)
+            db.session.commit()
+
+            return {"message": "Service added successfully!", "service": new_service.to_dict()}, 201
+        except Exception as e:
+            return {"message": str(e)}, 500
+        
+
+    @jwt_required()
+    def delete(self, service_id):
+        service = db.session.get(Service, service_id)  # Use Session.get() for SQLAlchemy 2.0+
+        
+        if not service:
+            return {"message": "Service not found"}, 404
+
+        db.session.delete(service)
+        db.session.commit()
+        return {"message": "Service deleted successfully"}, 200
+
 
 
 class Logout(Resource):
@@ -119,24 +163,16 @@ class Logout(Resource):
         unset_jwt_cookies(response)
         return response
 
-class AdminOnly(Resource):
-    @role_required('admin')
-    def get(self):
-        return {"message": "Welcome, Admin!"}, 200
-    
 
-class UserOnlyEndpoint(Resource):
-    @role_required('user')
-    def get(self):
-        return {"message": "Welcome, User!"}, 200
 
 api.add_resource(ClearSession, '/clear_session')
 api.add_resource(Signup, '/signup')
 api.add_resource(CheckSession, '/check_session')
 api.add_resource(Login, '/login')
 api.add_resource(Logout, '/logout')
-api.add_resource(AdminOnly, '/admin-only')
-api.add_resource(UserOnlyEndpoint, '/user-only')
+api.add_resource(ServiceResource, "/services", endpoint="services_list")  
+api.add_resource(ServiceResource, "/services/<int:service_id>", endpoint="service_detail")  
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
