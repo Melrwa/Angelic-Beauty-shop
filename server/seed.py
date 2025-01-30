@@ -1,94 +1,106 @@
-from datetime import datetime, timedelta
-from random import choice, randint, uniform
 from config import db, app
 from models import User, Staff, Service, StaffService, Review, Transaction
+from datetime import datetime
+
 
 def seed_data():
     with app.app_context():
-        print("Clearing existing data...")
-        db.session.query(Review).delete()
-        db.session.query(Transaction).delete()
-        db.session.query(StaffService).delete()
-        db.session.query(Staff).delete()
-        db.session.query(Service).delete()
-        db.session.query(User).delete()
-        db.session.commit()
+        db.drop_all()
+        db.create_all()
 
-        print("Seeding users...")
-        admin = User(name="Admin", username="admin", email="admin@example.com", role="admin")
-        admin.password_hash = "admin123"  # Set password securely
-        client1 = User(name="John Doe", username="johndoe", email="john@example.com", role="user")
-        client1.password_hash = "password"
-        client2 = User(name="Jane Smith", username="janesmith", email="jane@example.com", role="user")
-        client2.password_hash = "password"
-        users = [admin, client1, client2]
+        print("Seeding Users...")
+        users = [
+            User(
+                name="Alice Johnson",
+                username="alicej",
+                email="alice@example.com",
+                password_hash="password123",
+                gender="female",
+                role="user"
+            ),
+            User(
+                name="Bob Smith",
+                username="bobsmith",
+                email="bob@example.com",
+                password_hash="securepass",
+                gender="male",
+                role="user"
+            ),
+            User(
+                name="Admin User",
+                username="admin",
+                email="admin@example.com",
+                password_hash="adminpass",
+                gender="other",
+                role="admin"
+            ),
+        ]
         db.session.add_all(users)
         db.session.commit()
 
-        print("Seeding services...")
-        services = [
-            Service(name="Haircut", picture="haircut.jpg", price=20.0, time_taken=0.5),
-            Service(name="Hair Coloring", picture="coloring.jpg", price=50.0, time_taken=1.5),
-            Service(name="Massage", picture="massage.jpg", price=70.0, time_taken=1.0),
-            Service(name="Facial", picture="facial.jpg", price=40.0, time_taken=1.0),
-            Service(name="Manicure", picture="manicure.jpg", price=30.0, time_taken=0.75),
-        ]
-        db.session.add_all(services)
-        db.session.commit()
-
-        print("Seeding staff...")
+        print("Seeding Staff...")
         staff_members = [
-            Staff(name="Alice Brown", picture="alice.jpg", gender="female"),
-            Staff(name="Bob Green", picture="bob.jpg", gender="male"),
-            Staff(name="Charlie Black", picture="charlie.jpg", gender="male"),
+            Staff(name="Mike Barber", gender="male", role="barber"),
+            Staff(name="Lisa Stylist", gender="female", role="stylist"),
+            Staff(name="John Spa Therapist", gender="male", role="spa_therapist"),
+            Staff(name="Emma Hairdresser", gender="female", role="stylist"),
         ]
         db.session.add_all(staff_members)
         db.session.commit()
 
-        print("Assigning staff to services...")
-        staff_services = [
-            StaffService(staff_id=staff_members[0].id, service_id=services[0].id),  # Alice → Haircut
-            StaffService(staff_id=staff_members[0].id, service_id=services[1].id),  # Alice → Hair Coloring
-            StaffService(staff_id=staff_members[1].id, service_id=services[2].id),  # Bob → Massage
-            StaffService(staff_id=staff_members[2].id, service_id=services[3].id),  # Charlie → Facial
-            StaffService(staff_id=staff_members[2].id, service_id=services[4].id),  # Charlie → Manicure
+        print("Seeding Services...")
+        services = [
+            Service(name="Men's Haircut", price=20.0, time_taken=0.5),
+            Service(name="Women's Haircut", price=30.0, time_taken=1.0),
+            Service(name="Massage Therapy", price=50.0, time_taken=1.5),
+            Service(name="Braiding", price=40.0, time_taken=2.0),
         ]
-        db.session.add_all(staff_services)
+        db.session.add_all(services)
         db.session.commit()
 
-        print("Seeding transactions...")
+        print("Associating Staff with Services...")
+        staff_service_mappings = [
+            StaffService(staff_id=staff_members[0].id, service_id=services[0].id),  # Mike - Men's Haircut
+            StaffService(staff_id=staff_members[1].id, service_id=services[1].id),  # Lisa - Women's Haircut
+            StaffService(staff_id=staff_members[2].id, service_id=services[2].id),  # John - Massage Therapy
+            StaffService(staff_id=staff_members[3].id, service_id=services[3].id),  # Emma - Braiding
+        ]
+        db.session.add_all(staff_service_mappings)
+        db.session.commit()
+
+        print("Seeding Reviews...")
+        reviews = [
+            Review(staff_id=staff_members[0].id, client_id=users[0].id, rating=4.5, review="Great haircut!"),
+            Review(staff_id=staff_members[1].id, client_id=users[1].id, rating=5.0, review="Loved the style!"),
+            Review(staff_id=staff_members[2].id, client_id=users[0].id, rating=4.0, review="Very relaxing massage."),
+            Review(staff_id=staff_members[3].id, client_id=users[1].id, rating=3.5, review="Good, but took too long."),
+        ]
+        db.session.add_all(reviews)
+        db.session.commit()
+
+        print("Seeding Transactions...")
         transactions = [
             Transaction(
                 service_id=services[0].id,
                 staff_id=staff_members[0].id,
-                client_id=client1.id,
+                client_id=users[0].id,
                 amount_paid=services[0].price,
                 time_taken=services[0].time_taken,
-                booking_time=datetime.utcnow() - timedelta(days=randint(1, 10)),
-                completed_at=datetime.utcnow(),
+                booking_time=datetime.utcnow(),
             ),
             Transaction(
                 service_id=services[2].id,
-                staff_id=staff_members[1].id,
-                client_id=client2.id,
+                staff_id=staff_members[2].id,
+                client_id=users[1].id,
                 amount_paid=services[2].price,
                 time_taken=services[2].time_taken,
-                booking_time=datetime.utcnow() - timedelta(days=randint(1, 10)),
-                completed_at=datetime.utcnow(),
+                booking_time=datetime.utcnow(),
             ),
         ]
         db.session.add_all(transactions)
         db.session.commit()
 
-        print("Seeding reviews...")
-        reviews = [
-            Review(staff_id=staff_members[0].id, client_id=client1.id, rating=4.5, review="Great haircut!"),
-            Review(staff_id=staff_members[1].id, client_id=client2.id, rating=5.0, review="Best massage ever!"),
-        ]
-        db.session.add_all(reviews)
-        db.session.commit()
-
-        print("Database successfully seeded!")
+        print("Seeding Complete!")
 
 if __name__ == "__main__":
     seed_data()

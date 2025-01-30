@@ -203,7 +203,33 @@ class StaffResource(Resource):
         db.session.delete(staff)
         db.session.commit()
         return {"message": "Staff deleted successfully"}, 200
+class StaffReviewsResource(Resource):
+    def get(self):
+        staff_list = Staff.query.all()
+        
+        staff_reviews = []
+        for staff in staff_list:
+            reviews = [
+                {
+                    "rating": review.rating,
+                    "review": review.review,
+                    "client": review.client.name
+                } 
+                for review in staff.reviews
+            ]
+            
+            staff_reviews.append({
+                "id": staff.id,
+                "name": staff.name,
+                "picture": staff.picture,
+                "role": staff.role,
+                "average_rating": staff.average_rating,
+                "reviews": reviews
+            })
 
+        return jsonify(staff_reviews)
+
+# Register the resource
 
 
 class Logout(Resource):
@@ -222,6 +248,7 @@ api.add_resource(Logout, '/logout')
 api.add_resource(ServiceResource, "/services", endpoint="services_list")  
 api.add_resource(ServiceResource, "/services/<int:service_id>", endpoint="service_detail")  
 api.add_resource(StaffResource, "/staff", "/staff/<int:id>")
+api.add_resource(StaffReviewsResource, "/api/staff/reviews")
 
 
 if __name__ == '__main__':
