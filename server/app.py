@@ -156,6 +156,55 @@ class ServiceResource(Resource):
         return {"message": "Service deleted successfully"}, 200
 
 
+class StaffResource(Resource):
+    def get(self):
+        # Fetch all staff members from the database
+        staff_members = Staff.query.all()
+        
+        # Return the list of staff as a dictionary
+        return [staff.to_dict() for staff in staff_members], 200
+        
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+        
+        required_fields = ["name", "picture", "gender", "role"]
+        if not data or any(field not in data for field in required_fields):
+            return {"message": "Missing required fields"}, 400
+
+        # Ensure role is valid
+        valid_roles = {"stylist", "barber", "spa_therapist"}
+        role = data["role"].lower()
+        if role not in valid_roles:
+            return {"message": "Invalid role"}, 400
+
+        try:
+            new_staff = Staff(
+                name=data["name"],
+                picture=data["picture"],
+                gender=data["gender"],
+                role=role,  # Ensure it's correctly stored
+            )
+            db.session.add(new_staff)
+            db.session.commit()
+
+            return {"message": "Staff added successfully!", "staff": new_staff.to_dict()}, 201
+        except Exception as e:
+            return {"message": str(e)}, 500
+        
+
+
+    def delete(self, id):
+        """Delete a staff member by ID."""
+        staff = Staff.query.get(id)
+        if not staff:
+            return {"error": "Staff not found"}, 404
+
+        db.session.delete(staff)
+        db.session.commit()
+        return {"message": "Staff deleted successfully"}, 200
+
+
 
 class Logout(Resource):
     def post(self):
@@ -172,6 +221,7 @@ api.add_resource(Login, '/login')
 api.add_resource(Logout, '/logout')
 api.add_resource(ServiceResource, "/services", endpoint="services_list")  
 api.add_resource(ServiceResource, "/services/<int:service_id>", endpoint="service_detail")  
+api.add_resource(StaffResource, "/staff", "/staff/<int:id>")
 
 
 if __name__ == '__main__':

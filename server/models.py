@@ -61,19 +61,27 @@ class StaffService(db.Model):
         return f"<StaffService staff_id={self.staff_id} service_id={self.service_id}>"
 
 # Staff Model
+from sqlalchemy import Enum
+
 class Staff(db.Model, SerializerMixin):
     __tablename__ = 'staff'
+
+    serialize_rules = ('-staff_services', '-services', '-reviews', '-transactions', '-role')
+
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     picture = db.Column(db.String, nullable=True, default='image_url')
     gender = db.Column(Enum('male', 'female', 'other', name='gender_enum'), nullable=True)
+    role = db.Column(Enum('stylist', 'barber', 'spa_therapist', name='staff_role_enum'), nullable=False, default='stylist')
 
     # Relationships
     staff_services = db.relationship('StaffService', back_populates='staff', cascade='all, delete-orphan')
     services = association_proxy('staff_services', 'service')
     reviews = db.relationship('Review', back_populates='staff', cascade='all, delete-orphan')
     transactions = db.relationship('Transaction', back_populates='staff', cascade='all, delete-orphan')
+
+
 
     @hybrid_property
     def average_rating(self):
