@@ -68,3 +68,29 @@ class ReportsResource(Resource):
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+        
+
+    def get(self):
+        now = datetime.utcnow()
+
+        try:
+            # Get total services & staff count
+            total_services = db.session.query(Service).count()
+            total_staff = db.session.query(Staff).count()
+
+            # Daily revenue calculation
+            start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            daily_revenue = (
+                db.session.query(db.func.sum(Transaction.amount_paid))
+                .filter(Transaction.booking_time >= start_of_day)
+                .scalar() or 0
+            )
+
+            return jsonify({
+                "total_services": total_services,
+                "total_staff": total_staff,
+                "daily_revenue": daily_revenue
+            })
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
