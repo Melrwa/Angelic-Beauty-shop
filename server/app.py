@@ -3,13 +3,14 @@
 from datetime import datetime, timedelta
 
 from flask import request, session, jsonify, make_response
-from flask_restful import Resource, reqparse
+from flask_restful import Resource
 from flask_jwt_extended import create_access_token, jwt_required, set_access_cookies, unset_jwt_cookies, get_jwt_identity
 from config import app, db, api, avatar
 from models import User, Staff, Service, StaffService, Review, Transaction
 
 from utils import role_required
 from sqlalchemy.exc import IntegrityError
+from reports import ReportsResource
 # import traceback
 # from werkzeug.utils import secure_filename
 # import os
@@ -321,6 +322,8 @@ api.add_resource(ServiceResource, "/services/<int:service_id>", endpoint="servic
 api.add_resource(StaffResource, "/staff", "/staff/<int:id>")
 api.add_resource(StaffReviewsResource, "/api/staff/reviews")
 api.add_resource(TransactionResource, "/transactions")
+api.add_resource(ReportsResource, "/api/reports")
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
