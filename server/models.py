@@ -136,15 +136,16 @@ class Review(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f"<Review {self.rating} - {self.staff.name}>"
-
-# Transaction Model
+    
+    
 class Transaction(db.Model, SerializerMixin):
     __tablename__ = 'transactions'
 
     id = db.Column(db.Integer, primary_key=True)
-    service_id = db.Column(db.Integer, db.ForeignKey('services.id'))
-    staff_id = db.Column(db.Integer, db.ForeignKey('staff.id'))
-    client_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    service_id = db.Column(db.Integer, db.ForeignKey('services.id'), nullable=False)
+    staff_id = db.Column(db.Integer, db.ForeignKey('staff.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Optional
+    client_name = db.Column(db.String, nullable=False)  # Required, even for unregistered clients
     amount_paid = db.Column(db.Float, nullable=False)
     time_taken = db.Column(db.Float, nullable=False)  # Hours
     booking_time = db.Column(db.DateTime, default=datetime.utcnow)
@@ -153,7 +154,7 @@ class Transaction(db.Model, SerializerMixin):
     # Relationships
     service = db.relationship('Service', back_populates='transactions')
     staff = db.relationship('Staff', back_populates='transactions')
-    client = db.relationship('User', back_populates='transactions')
+    client = db.relationship('User', back_populates='transactions', foreign_keys=[client_id])
 
     def __repr__(self):
         return f"<Transaction {self.service.name} by {self.staff.name}>"

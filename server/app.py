@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from flask import request, session, jsonify, make_response
 from flask_restful import Resource, reqparse
@@ -230,7 +230,67 @@ class StaffReviewsResource(Resource):
         return jsonify(staff_reviews)
 
 # Register the resource
+class TransactionResource(Resource):
+    def get(self):
+        """Fetch all transactions"""
+        transactions = Transaction.query.all()
+        return jsonify([txn.to_dict() for txn in transactions])
 
+    def post(self):
+        data = request.get_json()
+
+        # Extract fields
+        service_id = data.get("service_id")
+        staff_id = data.get("staff_id")
+        client_id = data.get("client_id")  # Optional
+        client_name = data.get("client_name")  # Required
+        amount_paid = data.get("amount_paid")
+        time_taken = data.get("time_taken")
+
+        # Validate required fields
+        if not service_id or not staff_id or not client_name or amount_paid is None or time_taken is None:
+            return {"error": "Missing required fields"}, 400
+
+        # Ensure service exists
+        service = Service.query.get(service_id)
+        if not service:
+            return {"error": "Service not found"}, 404
+
+        # Validate amount paid
+        if amount_paid != service.price:
+            return {"error": f"Incorrect amount. Expected: {service.price}, Received: {amount_paid}"}, 400
+
+        # Ensure staff exists
+        staff = Staff.query.get(staff_id)
+        if not staff:
+            return {"error": "Staff not found"}, 404
+
+        # If client_id is provided, ensure it exists
+        if client_id:
+            client = User.query.get(client_id)
+            if not client:
+                return {"error": "Client not found"}, 404
+
+        try:
+            # Create new transaction
+            new_transaction = Transaction(
+                service_id=service_id,
+                staff_id=staff_id,
+                client_id=client_id if client_id else None,  # Optional
+                client_name=client_name.strip(),  # Ensure not null
+                amount_paid=amount_paid,
+                time_taken=time_taken,
+                booking_time=datetime.utcnow(),
+            )
+
+            db.session.add(new_transaction)
+            db.session.commit()
+
+            return {"message": "Transaction successfully added"}, 201
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
 
 class Logout(Resource):
     def post(self):
@@ -249,7 +309,7 @@ api.add_resource(ServiceResource, "/services", endpoint="services_list")
 api.add_resource(ServiceResource, "/services/<int:service_id>", endpoint="service_detail")  
 api.add_resource(StaffResource, "/staff", "/staff/<int:id>")
 api.add_resource(StaffReviewsResource, "/api/staff/reviews")
-
+api.add_resource(TransactionResource, "/transactions")
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

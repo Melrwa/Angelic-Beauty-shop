@@ -79,24 +79,32 @@ def seed_data():
         db.session.commit()
 
         print("Seeding Transactions...")
+
+
         transactions = [
+            # Transaction with a registered client
             Transaction(
                 service_id=services[0].id,
                 staff_id=staff_members[0].id,
-                client_id=users[0].id,
-                amount_paid=services[0].price,
+                client_id=users[0].id,  # Registered client
+                client_name=users[0].name,  # Store name for consistency
+                amount_paid=services[0].price,  # Ensure this matches service price
                 time_taken=services[0].time_taken,
                 booking_time=datetime.utcnow(),
             ),
+            
+            # Transaction with an unregistered client
             Transaction(
                 service_id=services[2].id,
                 staff_id=staff_members[2].id,
-                client_id=users[1].id,
-                amount_paid=services[2].price,
+                client_id=None,  # No client ID (unregistered)
+                client_name="John Doe",  # Unregistered client, so manually entered
+                amount_paid=services[2].price,  # Ensure this matches service price
                 time_taken=services[2].time_taken,
                 booking_time=datetime.utcnow(),
             ),
         ]
+
         db.session.add_all(transactions)
         db.session.commit()
 
