@@ -232,10 +232,21 @@ class StaffReviewsResource(Resource):
 # Register the resource
 class TransactionResource(Resource):
     def get(self):
-        """Fetch all transactions"""
         transactions = Transaction.query.all()
-        return jsonify([txn.to_dict() for txn in transactions])
+        result = []
 
+        for transaction in transactions:
+            result.append({
+                "id": transaction.id,
+                "service_name": transaction.service.name if transaction.service else "Unknown",
+                "staff_name": transaction.staff.name if transaction.staff else "Unknown",
+                "client_name": transaction.client.name if transaction.client else transaction.client_name,
+                "amount_paid": transaction.amount_paid,
+                "time_taken": transaction.time_taken,
+                "booking_time": transaction.booking_time.isoformat() if transaction.booking_time else None,
+            })
+
+        return jsonify(result)
     def post(self):
         data = request.get_json()
 
