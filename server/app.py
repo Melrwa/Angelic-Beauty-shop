@@ -85,7 +85,7 @@ class CheckSession(Resource):
     @jwt_required(locations=["cookies"])  # Ensure JWT is read from cookies
     def get(self):
         current_user_id = get_jwt_identity()  # Extract user ID from JWT
-        user = User.query.get(current_user_id)
+        user = db.session.get(User, current_user_id)  
 
         if user:
             return {
@@ -96,6 +96,7 @@ class CheckSession(Resource):
             }, 200
 
         return {"message": "User not found"}, 404
+
 
 
 class Login(Resource):
@@ -151,6 +152,23 @@ class ServiceResource(Resource):
             return {"message": "Service added successfully!", "service": new_service.to_dict()}, 201
         except Exception as e:
             return {"message": str(e)}, 500
+        
+    def patch(self, service_id):
+        service = Service.query.get(service_id)
+        if not service:
+            return jsonify({"error": "Service not found"}), 404
+
+        data = request.get_json()
+        new_price = data.get("price")
+
+        if new_price is None or new_price <= 0:
+            return jsonify({"error": "Invalid price"}), 400
+
+        service.price = new_price
+        db.session.commit()
+
+        return jsonify({"id": service.id, "price": service.price})
+
         
 
     @jwt_required()
