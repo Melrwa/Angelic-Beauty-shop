@@ -182,11 +182,19 @@ class ServiceResource(Resource):
         db.session.commit()
         return {"message": "Service deleted successfully"}, 200
     
-    
+
 class StaffResource(Resource):
-    def get(self):
-        staff_members = Staff.query.all()
-        return [staff.to_dict() for staff in staff_members], 200
+    def get(self, id=None):  # Accepts optional `id`
+        if id is None:
+            # Fetch all staff members
+            staff_members = Staff.query.all()
+            return [staff.to_dict() for staff in staff_members], 200
+        else:
+            # Fetch a specific staff member by ID
+            staff = Staff.query.get(id)
+            if not staff:
+                return {"message": "Staff member not found"}, 404
+            return staff.to_dict(), 200
 
     @jwt_required()
     def post(self):
@@ -216,14 +224,12 @@ class StaffResource(Resource):
 
     @jwt_required()
     def patch(self, id):
-        """ Update staff details """
         staff = Staff.query.get(id)
         if not staff:
             return {"message": "Staff member not found"}, 404
 
         data = request.get_json()
         
-        # Update only the provided fields
         if "name" in data:
             staff.name = data["name"]
         if "picture" in data:
@@ -241,8 +247,7 @@ class StaffResource(Resource):
             db.session.commit()
             return {"message": "Staff updated successfully!", "staff": staff.to_dict()}, 200
         except Exception as e:
-            return {"message": str(e)}, 500
-        
+            return {"message": str(e)}, 500        
 
     def delete(self, id):
         """Delete a staff member by ID."""
