@@ -329,6 +329,27 @@ class TransactionResource(Resource):
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 500
+class AdminMembers(Resource):
+   
+    def get(self):
+        # Get all members (users with role="user")
+        members = User.query.filter_by(role="user").all()
+        total_members = len(members)
+
+        # Prepare response data
+        member_data = []
+        for member in members:
+            # Count how many times they have been served
+            visit_count = db.session.query(Transaction).filter_by(client_id=member.id).count()
+
+            member_data.append({
+                "id": member.id,
+                "name": member.name,
+                "email": member.email,
+                "total_visits": visit_count
+            })
+
+        return jsonify({"total_members": total_members, "members": member_data})
 
 class Logout(Resource):
     def post(self):
@@ -349,6 +370,7 @@ api.add_resource(StaffResource, "/staff", "/staff/<int:id>")
 api.add_resource(StaffReviewsResource, "/staff/reviews")
 api.add_resource(TransactionResource, "/transactions")
 api.add_resource(ReportsResource, "/reports")
+api.add_resource(AdminMembers, "/admin/members")
 
 
 if __name__ == '__main__':
