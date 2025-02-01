@@ -104,18 +104,26 @@ class Login(Resource):
         user = User.query.filter_by(username=data['username']).first()
 
         if user and user.check_password(data['password']):
-            # Create a JWT with the user ID as identity and role in custom claims
+            # Create JWT Token
             access_token = create_access_token(
-                identity=str(user.id),  # Use user ID as a string for identity
-                additional_claims={"role": user.role}  # Add role to JWT claims
+                identity=str(user.id),
+                additional_claims={"role": user.role}
             )
 
-            # Create a response with the access token set in cookies
-            response = jsonify({"message": "Login successful"})
+            # Create JSON response with token & user info
+            response = jsonify({
+                "message": "Login successful",
+                "access_token": access_token,  # <-- Add this!
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role
+            })
+
+            # Set JWT token in cookies
             set_access_cookies(response, access_token)
             return response
 
-        # Return an error for invalid credentials
         return {"message": "Invalid credentials"}, 401
     
     
@@ -320,9 +328,9 @@ api.add_resource(Logout, '/logout')
 api.add_resource(ServiceResource, "/services", endpoint="services_list")  
 api.add_resource(ServiceResource, "/services/<int:service_id>", endpoint="service_detail")  
 api.add_resource(StaffResource, "/staff", "/staff/<int:id>")
-api.add_resource(StaffReviewsResource, "/api/staff/reviews")
+api.add_resource(StaffReviewsResource, "/staff/reviews")
 api.add_resource(TransactionResource, "/transactions")
-api.add_resource(ReportsResource, "/api/reports")
+api.add_resource(ReportsResource, "/reports")
 
 
 if __name__ == '__main__':
