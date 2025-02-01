@@ -181,25 +181,21 @@ class ServiceResource(Resource):
         db.session.delete(service)
         db.session.commit()
         return {"message": "Service deleted successfully"}, 200
-
-
+    
+    
 class StaffResource(Resource):
     def get(self):
-        # Fetch all staff members from the database
         staff_members = Staff.query.all()
-        
-        # Return the list of staff as a dictionary
         return [staff.to_dict() for staff in staff_members], 200
-        
+
     @jwt_required()
     def post(self):
         data = request.get_json()
-        
         required_fields = ["name", "picture", "gender", "role"]
+
         if not data or any(field not in data for field in required_fields):
             return {"message": "Missing required fields"}, 400
 
-        # Ensure role is valid
         valid_roles = {"stylist", "barber", "spa_therapist"}
         role = data["role"].lower()
         if role not in valid_roles:
@@ -210,16 +206,43 @@ class StaffResource(Resource):
                 name=data["name"],
                 picture=data["picture"],
                 gender=data["gender"],
-                role=role,  # Ensure it's correctly stored
+                role=role,
             )
             db.session.add(new_staff)
             db.session.commit()
-
             return {"message": "Staff added successfully!", "staff": new_staff.to_dict()}, 201
         except Exception as e:
             return {"message": str(e)}, 500
-        
 
+    @jwt_required()
+    def patch(self, id):
+        """ Update staff details """
+        staff = Staff.query.get(id)
+        if not staff:
+            return {"message": "Staff member not found"}, 404
+
+        data = request.get_json()
+        
+        # Update only the provided fields
+        if "name" in data:
+            staff.name = data["name"]
+        if "picture" in data:
+            staff.picture = data["picture"]
+        if "gender" in data:
+            staff.gender = data["gender"]
+        if "role" in data:
+            valid_roles = {"stylist", "barber", "spa_therapist"}
+            role = data["role"].lower()
+            if role not in valid_roles:
+                return {"message": "Invalid role"}, 400
+            staff.role = role
+
+        try:
+            db.session.commit()
+            return {"message": "Staff updated successfully!", "staff": staff.to_dict()}, 200
+        except Exception as e:
+            return {"message": str(e)}, 500
+        
 
     def delete(self, id):
         """Delete a staff member by ID."""

@@ -1,7 +1,6 @@
 from config import db, app
-from models import User, Staff, Service, StaffService, Review, Transaction
-from datetime import datetime
-
+from models import User, Staff, Service, StaffService, Review, Transaction, Booking
+from datetime import datetime, timedelta
 
 def seed_data():
     with app.app_context():
@@ -79,33 +78,45 @@ def seed_data():
         db.session.commit()
 
         print("Seeding Transactions...")
-
-
         transactions = [
-            # Transaction with a registered client
             Transaction(
                 service_id=services[0].id,
                 staff_id=staff_members[0].id,
                 client_id=users[0].id,  # Registered client
                 client_name=users[0].name,  # Store name for consistency
-                amount_paid=services[0].price,  # Ensure this matches service price
+                amount_paid=services[0].price,
                 time_taken=services[0].time_taken,
                 booking_time=datetime.utcnow(),
             ),
-            
-            # Transaction with an unregistered client
             Transaction(
                 service_id=services[2].id,
                 staff_id=staff_members[2].id,
                 client_id=None,  # No client ID (unregistered)
-                client_name="John Doe",  # Unregistered client, so manually entered
-                amount_paid=services[2].price,  # Ensure this matches service price
+                client_name="John Doe",  # Unregistered client
+                amount_paid=services[2].price,
                 time_taken=services[2].time_taken,
                 booking_time=datetime.utcnow(),
             ),
         ]
-
         db.session.add_all(transactions)
+        db.session.commit()
+
+        print("Seeding Bookings...")
+        bookings = [
+            Booking(
+                service_id=services[0].id,
+                staff_id=staff_members[0].id,
+                user_id=users[0].id,  # Alice books Mike for Men's Haircut
+                booking_time=datetime.utcnow() + timedelta(days=1)  # Tomorrow
+            ),
+            Booking(
+                service_id=services[2].id,
+                staff_id=staff_members[2].id,
+                user_id=users[1].id,  # Bob books John for Massage Therapy
+                booking_time=datetime.utcnow() + timedelta(days=2)  # Day after tomorrow
+            ),
+        ]
+        db.session.add_all(bookings)
         db.session.commit()
 
         print("Seeding Complete!")

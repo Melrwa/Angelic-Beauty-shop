@@ -24,6 +24,8 @@ class User(db.Model, SerializerMixin):
     # Relationships
     reviews = db.relationship('Review', back_populates='client', cascade='all, delete-orphan')
     transactions = db.relationship('Transaction', back_populates='client', cascade='all, delete-orphan')
+    bookings = db.relationship('Booking', back_populates='user', cascade='all, delete-orphan')
+
 
     # Password hashing
     @hybrid_property
@@ -62,24 +64,44 @@ class StaffService(db.Model):
 
 # Staff Model
 from sqlalchemy import Enum
-
 class Staff(db.Model, SerializerMixin):
     __tablename__ = 'staff'
 
-    serialize_rules = ('-staff_services', '-services', '-reviews', '-transactions', '-role')
-
+    serialize_rules = ('-staff_services', '-services', '-reviews', '-transactions')
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     picture = db.Column(db.String, nullable=True, default='image_url')
-    gender = db.Column(Enum('male', 'female', 'other', name='gender_enum'), nullable=True)
-    role = db.Column(Enum('stylist', 'barber', 'spa_therapist', name='staff_role_enum'), nullable=False, default='stylist')
+    gender = db.Column(
+        Enum('male', 'female', 'other', name='gender_enum'),
+        nullable=False,  # Ensures gender is always provided
+        default='other'
+    )
+    role = db.Column(
+        Enum('stylist', 'barber', 'spa_therapist', name='staff_role_enum'),
+        nullable=False,
+        default='stylist'  # Ensure default is a valid Enum value
+    )
 
     # Relationships
     staff_services = db.relationship('StaffService', back_populates='staff', cascade='all, delete-orphan')
     services = association_proxy('staff_services', 'service')
     reviews = db.relationship('Review', back_populates='staff', cascade='all, delete-orphan')
     transactions = db.relationship('Transaction', back_populates='staff', cascade='all, delete-orphan')
+    bookings = db.relationship('Booking', back_populates='staff', cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "picture": self.picture,
+            "gender": self.gender.value if isinstance(self.gender, Enum) else self.gender if self.gender else "not specified",
+            "role": self.role.value if isinstance(self.role, Enum) else self.role if self.role else "not specified",
+            "services": [service.id for service in self.services],
+            "reviews": [review.id for review in self.reviews],
+            "transactions": [transaction.id for transaction in self.transactions],
+            "bookings": [booking.id for booking in self.bookings]
+        }
 
 
 
@@ -107,6 +129,8 @@ class Service(db.Model, SerializerMixin):
     service_staff = db.relationship('StaffService', back_populates='service', cascade='all, delete-orphan')
     staff = association_proxy('service_staff', 'staff')
     transactions = db.relationship('Transaction', back_populates='service', cascade='all, delete-orphan')
+    bookings = db.relationship('Booking', back_populates='service', cascade='all, delete-orphan')
+
 
     def to_dict(self):
         return {
@@ -158,4 +182,26 @@ class Transaction(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f"<Transaction {self.service.name} by {self.staff.name}>"
+    
 
+
+
+
+
+class Booking(db.Model, SerializerMixin):
+    __tablename__ = 'bookings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    service_id = db.Column(db.Integer, db.ForeignKey('services.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    staff_id = db.Column(db.Integer, db.ForeignKey('staff.id'), nullable=False)
+    booking_time = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default="pending")  # "pending", "confirmed", "completed", "canceled"
+
+    # Relationships
+    service = db.relationship('Service', back_populates='bookings')
+    user = db.relationship('User', back_populates='bookings')
+    staff = db.relationship('Staff', back_populates='bookings')
+
+    def __repr__(self):
+        return f"<Booking {self.service.name} by {self.user.name} with {self.staff.name}>"

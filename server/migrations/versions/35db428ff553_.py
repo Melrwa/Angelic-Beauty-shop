@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: df9e71bf8b1c
+Revision ID: 35db428ff553
 Revises: 
-Create Date: 2025-01-31 02:40:31.927111
+Create Date: 2025-02-02 00:04:31.088276
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'df9e71bf8b1c'
+revision = '35db428ff553'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -30,7 +30,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('picture', sa.String(), nullable=True),
-    sa.Column('gender', sa.Enum('male', 'female', 'other', name='gender_enum'), nullable=True),
+    sa.Column('gender', sa.Enum('male', 'female', 'other', name='gender_enum'), nullable=False),
     sa.Column('role', sa.Enum('stylist', 'barber', 'spa_therapist', name='staff_role_enum'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
@@ -49,6 +49,18 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_users_email'), ['email'], unique=True)
         batch_op.create_index(batch_op.f('ix_users_username'), ['username'], unique=True)
 
+    op.create_table('bookings',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('service_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('staff_id', sa.Integer(), nullable=False),
+    sa.Column('booking_time', sa.DateTime(), nullable=True),
+    sa.Column('status', sa.String(length=20), nullable=True),
+    sa.ForeignKeyConstraint(['service_id'], ['services.id'], ),
+    sa.ForeignKeyConstraint(['staff_id'], ['staff.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('reviews',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('staff_id', sa.Integer(), nullable=True),
@@ -89,6 +101,7 @@ def downgrade():
     op.drop_table('transactions')
     op.drop_table('staff_service')
     op.drop_table('reviews')
+    op.drop_table('bookings')
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_users_username'))
         batch_op.drop_index(batch_op.f('ix_users_email'))
