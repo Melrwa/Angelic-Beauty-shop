@@ -6,7 +6,7 @@ from flask import request, session, jsonify, make_response
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, jwt_required, set_access_cookies, unset_jwt_cookies, get_jwt_identity
 from config import app, db, api, avatar
-from models import User, Staff, Service, StaffService, Review, Transaction
+from models import User, Staff, Service, StaffService, Review, Transaction, Booking
 
 from utils import role_required
 from sqlalchemy.exc import IntegrityError
@@ -379,11 +379,82 @@ class AdminMembers(Resource):
 
         return jsonify({"total_members": total_members, "members": member_data})
 
+
+class BookingResource(Resource):
+    @jwt_required()
+    def post(self):
+        """
+        Create a new booking.
+        """
+        data = request.get_json()
+        user_id = get_jwt_identity()  # Get logged-in user ID
+
+        # Validate required fields
+        service_id = data.get("service_id")
+        staff_id = data.get("staff_id")
+        booking_time = data.get("booking_time")
+
+        if not all([service_id, staff_id, booking_time]):
+            return {"error": "Missing required fields"}, 400
+
+        # Convert booking_time from string to datetime
+        try:
+            booking_time = datetime.fromisoformat(booking_time)
+        except ValueError:
+            return {"error": "Invalid date format. Use ISO format (YYYY-MM-DDTHH:MM:SS)"}, 400
+
+        # Check if service and staff exist
+        service = Service.query.get(service_id)
+        staff = Staff.query.get(staff_id)
+
+        if not service:
+            return {"error": "Service not found"}, 404
+        if not staff:
+            return {"error": "Staff not found"}, 404
+
+        # Check if the staff is already booked at the same time
+        existing_booking = Booking.query.filter_by(staff_id=staff_id, booking_time=booking_time).first()
+        if existing_booking:
+            return {"error": "Staff is already booked at this time"}, 400
+
+        # Create new booking
+        new_booking = Booking(
+            service_id=service_id,
+            staff_id=staff_id,
+            user_id=user_id,
+            booking_time=booking_time
+        )
+
+        db.session.add(new_booking)
+        db.session.commit()
+
+        return {"message": "Booking successful", "booking_id": new_booking.id}, 201
+
+    @jwt_required()
+    def get(self):
+        """
+        Retrieve all bookings.
+        """
+        bookings = Booking.query.all()
+        return jsonify([
+            {
+                "id": booking.id,
+                "service": booking.service.name,
+                "staff": booking.staff.name,
+                "user": booking.user.username,
+                "booking_time": booking.booking_time.isoformat()
+            }
+            for booking in bookings
+        ])
+
+
 class Logout(Resource):
     def post(self):
         response = jsonify({"message": "Logout successful"})
         unset_jwt_cookies(response)
         return response
+    
+
 
 
 
@@ -399,6 +470,8 @@ api.add_resource(StaffReviewsResource, "/staff/reviews")
 api.add_resource(TransactionResource, "/transactions")
 api.add_resource(ReportsResource, "/reports")
 api.add_resource(AdminMembers, "/admin/members")
+
+api.add_resource(BookingResource, "/bookings")
 
 
 if __name__ == '__main__':
