@@ -15,6 +15,10 @@ from reports import ReportsResource
 # from werkzeug.utils import secure_filename
 # import os
 
+class Home(Resource):
+    def get(self):
+        return {"message": "Backend is running successfully!"}
+
 
 class ClearSession(Resource):
     @jwt_required()
@@ -537,7 +541,7 @@ class Logout(Resource):
 
 
 
-
+api.add_resource(Home, "/")
 api.add_resource(ClearSession, '/clear_session')
 api.add_resource(Signup, '/signup')
 api.add_resource(CheckSession, '/check_session')
@@ -559,5 +563,5 @@ api.add_resource(ReviewResource, "/reviews", endpoint="reviews_list")
 api.add_resource(StaffReviewsResource, "/reviews/<int:staff_id>", endpoint="review_detail")
 
 
-if __name__ == '__main__':
-    app.run(port=5555, debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000) 

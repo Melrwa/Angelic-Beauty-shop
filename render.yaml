@@ -1,0 +1,14 @@
+services:
+  - name: beauty-shop-backend
+    type: web
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 4 -b 0.0.0.0:10000 config:app
+    envVars:
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: FLASK_ENV
+        value: "production"
+    plan: free
