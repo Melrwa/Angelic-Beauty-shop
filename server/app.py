@@ -258,6 +258,86 @@ class StaffResource(Resource):
         db.session.delete(staff)
         db.session.commit()
         return {"message": "Staff deleted successfully"}, 200
+class ReviewResource(Resource):
+    def post(self):
+        """Create a new review"""
+        data = request.get_json()
+
+        staff_id = data.get("staff_id")
+        client_id = data.get("client_id")
+        rating = data.get("rating")
+        review_text = data.get("review")
+
+        if not all([staff_id, client_id, rating]):
+            return {"error": "Staff ID, Client ID, and Rating are required"}, 400  # ✅ No jsonify()
+
+        staff = Staff.query.get(staff_id)
+        client = User.query.get(client_id)
+
+        if not staff:
+            return {"error": "Staff not found"}, 404
+        if not client:
+            return {"error": "Client not found"}, 404
+
+        if rating < 1 or rating > 5:
+            return {"error": "Rating must be between 1 and 5"}, 400
+
+        new_review = Review(
+            staff_id=staff_id,
+            client_id=client_id,
+            rating=rating,
+            review=review_text
+        )
+
+        db.session.add(new_review)
+        db.session.commit()
+
+        return {
+            "message": "Review submitted successfully",
+            "review": {
+                "id": new_review.id,
+                "staff_id": new_review.staff_id,
+                "client_id": new_review.client_id,
+                "rating": new_review.rating,
+                "review": new_review.review
+            }
+        }, 200
+
+    def put(self, review_id):
+        """Update an existing review"""
+        data = request.get_json()
+
+        # Get the existing review
+        review = Review.query.get(review_id)
+        if not review:
+            return {"error": "Review not found"}, 404
+
+        # Update fields if provided
+        new_rating = data.get("rating")
+        new_review_text = data.get("review")
+
+        if new_rating:
+            if not (1 <= new_rating <= 5):
+                return {"error": "Rating must be between 1 and 5"}, 400
+            review.rating = new_rating
+
+        if new_review_text:
+            review.review = new_review_text
+
+        db.session.commit()
+
+        return {
+            "message": "Review updated successfully",
+            "review": {
+                "id": review.id,
+                "staff_id": review.staff_id,
+                "client_id": review.client_id,
+                "rating": review.rating,
+                "review": review.review
+            }
+        }, 200  
+
+
 class StaffReviewsResource(Resource):
     def get(self):
         staff_list = Staff.query.all()
@@ -472,6 +552,11 @@ api.add_resource(ReportsResource, "/reports")
 api.add_resource(AdminMembers, "/admin/members")
 
 api.add_resource(BookingResource, "/bookings")
+
+
+# Review Endpoints
+api.add_resource(ReviewResource, "/reviews", endpoint="reviews_list")
+api.add_resource(StaffReviewsResource, "/reviews/<int:staff_id>", endpoint="review_detail")
 
 
 if __name__ == '__main__':
