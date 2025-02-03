@@ -24,7 +24,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # JWT Configurations (More Secure for Deployment)
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "default_jwt_secret_key")  # Fallback
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=10)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=15)
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]  # Store JWT in cookies
 app.config["JWT_COOKIE_SECURE"] = True  # Set to True for HTTPS in production
 app.config["JWT_COOKIE_CSRF_PROTECT"] = True  # Enable CSRF protection for production
