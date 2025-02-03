@@ -3,7 +3,6 @@ aniso8601==10.0.0
 Babel==2.8.0
 bcrypt==3.2.0
 blinker==1.9.0
-Brlapi==0.8.3
 cachetools==5.0.0
 certifi==2020.6.20
 chardet==3.0.4
