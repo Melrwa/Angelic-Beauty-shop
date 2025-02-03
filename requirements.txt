@@ -9,7 +9,6 @@ chardet==3.0.4
 click==8.1.8
 colorama==0.4.4
 cryptography==3.4.8
-cupshelpers==1.0
 dbus-python==1.2.18
 defer==1.0.6
 distlib==0.3.9
