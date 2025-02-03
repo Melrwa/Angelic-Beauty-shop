@@ -226,9 +226,9 @@ class StaffResource(Resource):
         except Exception as e:
             return {"message": str(e)}, 500
 
-   
+    @jwt_required()
     def patch(self, id):
-        staff = db.session.get(Staff, id) 
+        staff = Staff.query.get(id)
         if not staff:
             return {"message": "Staff member not found"}, 404
 
@@ -277,7 +277,6 @@ class ReviewResource(Resource):
 
         staff = Staff.query.get(staff_id)
         client = User.query.get(client_id)
-        # staff = db.session.get(Staff, id) 
 
         if not staff:
             return {"error": "Staff not found"}, 404
