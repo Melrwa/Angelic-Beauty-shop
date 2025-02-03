@@ -63,25 +63,25 @@ npm run dev
 
 **Authentication**
 
-`POST /login` – Authenticate user
-`/signup`  – Register a member
+- `POST /login` – Authenticate user
+- `/signup`  – Register a member
 
 **Services && Bookings**
 
-`GET /services` – View all services
-`POST /bookings` – Book a service
-`GET /bookings/user/<id>` – Get user bookings
+- `GET /services` – View all services
+- `POST /bookings` – Book a service
+- `GET /bookings/user/<id>` – Get user bookings
 
 **Staff && Review**
 
-`GET /staff` – View all staff
-`POST /reviews` – Submit a review
-`GET /reviews/staff/<id>` – Get staff reviews
+- `GET /staff` – View all staff
+- `POST /reviews` – Submit a review
+- `GET /reviews/staff/<id>` – Get staff reviews
 
 **Admin && Reports**
 
-`GET /reports` – Daily weekly and monthly reports r
-`GET /transactions` -Get all transactions
+- `GET /reports` – Daily weekly and monthly reports 
+- `GET /transactions` -Get all transactions
 
 
 ## Databasa Schema
