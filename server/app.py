@@ -563,5 +563,5 @@ api.add_resource(ReviewResource, "/reviews", endpoint="reviews_list")
 api.add_resource(StaffReviewsResource, "/reviews/<int:staff_id>", endpoint="review_detail")
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000) 
+# if __name__ == "__main__":
+#     app.run(host="0.0.0.0", port=10000) 
