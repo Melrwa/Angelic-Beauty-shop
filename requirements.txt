@@ -82,7 +82,6 @@ simplejson==3.17.6
 six==1.16.0
 SQLAlchemy==2.0.37
 typing_extensions==4.12.2
-ubuntu-pro-client==8001
 ufw==0.36.1
 unattended-upgrades==0.1
 uritemplate==3.0.1
